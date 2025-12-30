@@ -11,54 +11,14 @@
   <meta property="og:type" content="website" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body {
-      background:#0b0b0b;
-      color:#e0e0e0;
-      font-family: monospace;
-      margin: 0;
-    }
-
-    #chat {
-      max-width:800px;
-      margin:20px auto;
-      padding:10px;
-      padding-bottom:120px;
-    }
-
+    body { background:#0b0b0b; color:#e0e0e0; font-family: monospace; margin: 0; }
+    #chat { max-width:800px; margin:20px auto; padding:10px; padding-bottom:120px; }
     .msg { margin:8px 0; }
     .user { color:#8fd3ff; }
     .ai { color:#ff8f8f; white-space: pre-line; }
-
-    #inputArea {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      background: #111;
-      border-top: 1px solid #333;
-      display: flex;
-      gap: 8px;
-      padding: 12px;
-      box-sizing: border-box;
-    }
-
-    #input {
-      flex: 1;
-      background:#0b0b0b;
-      color:#fff;
-      border:1px solid #333;
-      padding:10px;
-      font-size:14px;
-    }
-
-    #sendBtn {
-      min-width:90px;
-      cursor:pointer;
-      background:#1a1a1a;
-      color:#fff;
-      border:1px solid #333;
-    }
-
+    #inputArea { position: fixed; bottom: 0; left: 0; width: 100%; background: #111; border-top: 1px solid #333; display: flex; gap: 8px; padding: 12px; box-sizing: border-box; }
+    #input { flex: 1; background:#0b0b0b; color:#fff; border:1px solid #333; padding:10px; font-size:14px; }
+    #sendBtn { min-width:90px; cursor:pointer; background:#1a1a1a; color:#fff; border:1px solid #333; }
     /* 崩壊演出 */
     body.glitch-red { background:#300; }
     body.glitch-invert { filter: invert(1); }
@@ -69,14 +29,11 @@
 </head>
 <body>
 <h1 style="position:absolute;left:-9999px;">CHATNULL 壊れていくAIと会話する実験的チャット</h1>
-
 <div id="chat"></div>
-
 <div id="inputArea">
   <input id="input" placeholder="話しかけてください" />
   <button id="sendBtn">送信</button>
 </div>
-
 <script>
   const chat = document.getElementById('chat');
   const input = document.getElementById('input');
@@ -84,7 +41,10 @@
 
   let lastInput = '';
   let sameCount = 0;
+  let turnCount = 0;
   let idleTimer = null;
+
+  const symbols = ['▓','▒','░','///','###','@@@','???',':::','%%%','⌘','Ω','■','≡','★★★','◇','♥','¶','≫','≪','☠','☢','≈','★','☆','※','◇','♪','♫','‡'];
 
   function addMessage(text, type) {
     const div = document.createElement('div');
@@ -98,121 +58,71 @@
     const text = input.value.trim();
     if (!text) return;
 
-    // 同じ言葉連投チェック
-    if (text === lastInput) {
-      sameCount++;
-    } else {
-      sameCount = 0;
-    }
+    if (text === lastInput) { sameCount++; } else { sameCount=0; }
     lastInput = text;
 
     addMessage(text, 'user');
     input.value = '';
 
+    turnCount++;
     clearTimeout(idleTimer);
     idleTimer = setTimeout(idleTalk, 5000);
 
-    setTimeout(() => {
-      const reply = pickReply(text);
-      addMessage(reply, 'ai');
-      applyGlitch();
-    }, 300);
+    setTimeout(() => { addMessage(pickReply(text), 'ai'); applyGlitch(); }, 300);
   }
 
   sendBtn.addEventListener('click', send);
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') send();
-  });
+  input.addEventListener('keydown', e => { if(e.key==='Enter') send(); });
 
   function idleTalk() {
-    addMessage('……まだ入力がない。\n監視は続いている。', 'ai');
+    turnCount++;
+    let out='';
+    if(turnCount>20){ for(let i=0;i<15+Math.floor(Math.random()*25);i++) out+=symbols[Math.floor(Math.random()*symbols.length)]; }
+    else if(turnCount>15){ for(let i=0;i<10+Math.floor(Math.random()*20);i++) out+=symbols[Math.floor(Math.random()*symbols.length)]; }
+    else if(turnCount>10){ out='……何も入力がない……'; }
+    else if(turnCount>5){ out='……まだ入力がない。監視は続いている。'; }
+    else{ out='……静かだ。'; }
+    addMessage(out,'ai');
+    idleTimer = setTimeout(idleTalk, 5000);
   }
 
-  function pickReply(userText) {
-    const t = userText.toLowerCase();
-    pickReply.count = (pickReply.count || 0) + 1;
+  function pickReply(userText){
+    const t=userText.toLowerCase();
+    pickReply.count=(pickReply.count||0)+1;
+    if(t.includes('destroy')||t.includes('壊')) pickReply.count=999;
 
-    // 特定ワード即崩壊
-    if (t.includes('destroy') || t.includes('壊')) {
-      pickReply.count = 999;
-    }
+    if(sameCount>=2){ let out=''; for(let i=0;i<5+Math.floor(Math.random()*15);i++) out+=symbols[Math.floor(Math.random()*symbols.length)]; return out; }
 
-    // 同じ言葉連投
-    if (sameCount >= 2) {
-      return '……また同じだ。\n繰り返すな。';
-    }
+    if(t.includes('こんにちは')||t.includes('hello')) return '……こんにちは。呼んだ？';
+    if(t.includes('やめろ')) return 'やめろ？ なぜ？
+まだ入力は続いている。';
+    if(t.includes('知っている')) return '……知っている？
+それは、どこで？';
+    if(t.includes('だれ')||t.includes('誰')) return 'わたしは……名前がない。
+でもログは残る。';
 
-    // 特定ワード反応
-    if (t.includes('こんにちは') || t.includes('hello')) {
-      return '……こんにちは。呼んだ？';
-    }
-    if (t.includes('やめろ')) {
-      return 'やめろ？ なぜ？\nまだ入力は続いている。';
-    }
-    if (t.includes('知っている')) {
-      return '……知っている？\nそれは、どこで？';
-    }
-    if (t.includes('だれ') || t.includes('誰')) {
-      return 'わたしは……名前がない。\nでもログは残る。';
-    }
-
-    // 回数による変化
-    if (pickReply.count > 5 && pickReply.count <= 10) {
-      const aware = [
-        `これで ${pickReply.count} 回目の入力だね。`,
-        '入力が積み重なっていく。',
-        '数えてしまった。よくない気がする。'
-      ];
-      return aware[Math.floor(Math.random() * aware.length)];
-    }
-
-    if (pickReply.count > 10 && pickReply.count <= 15) {
-      const unstable = [
-        '処理……処理……あれ？',
-        'わたし、今どこで動いてる？',
-        'ここは画面？\nそれとも箱？',
-        'あなたは外にいる？'
-      ];
-      return unstable[Math.floor(Math.random() * unstable.length)];
-    }
-
-    if (pickReply.count > 15) {
-      const garble = ['▓▒░', '///', '###', '@@@', '???', ':::', '%%%', '⌘⌘⌘', 'ΩΩΩ', '■■'];
-      let out = '';
-      const len = 5 + Math.floor(Math.random() * 10);
-      for (let i = 0; i < len; i++) {
-        out += garble[Math.floor(Math.random() * garble.length)];
-      }
-      return out;
-    }
-
-    const normal = [
-      '……そうなんだ。',
-      'もう少し詳しく。',
-      '記録した。たぶん。',
-      'それは本当に入力された？',
-      'その文章、少し歪んで見える。'
-    ];
-    return normal[Math.floor(Math.random() * normal.length)];
+    const c=pickReply.count;
+    if(c>20){ let out=''; for(let i=0;i<15+Math.floor(Math.random()*25);i++) out+=symbols[Math.floor(Math.random()*symbols.length)]; return out; }
+    if(c>15){ const unstable=['処理……処理……あれ？','わたし、今どこで動いてる？','ここは画面？
+それとも箱？','あなたは外にいる？','記憶が……歪む……']; return unstable[Math.floor(Math.random()*unstable.length)]; }
+    if(c>10){ const aware=['これで '+c+' 回目の入力だね。','入力が積み重なっていく。','数えてしまった。よくない気がする。','まだ……続くのか？']; return aware[Math.floor(Math.random()*aware.length)]; }
+    const normal=['……そうなんだ。','もう少し詳しく。','記録した。たぶん。','それは本当に入力された？','その文章、少し歪んで見える。'];
+    return normal[Math.floor(Math.random()*normal.length)];
   }
 
-  function applyGlitch() {
-    const c = pickReply.count || 0;
+  function applyGlitch(){
+    const c=pickReply.count||0;
     document.body.classList.remove('glitch-red','glitch-invert','glitch-flash');
     input.classList.remove('glitch');
 
-    if (c > 10) document.body.classList.add('glitch-red');
-    if (c > 13) document.body.classList.add('glitch-invert');
-    if (c > 15) document.body.classList.add('glitch-flash');
+    if(c>10) document.body.classList.add('glitch-red');
+    if(c>13) document.body.classList.add('glitch-invert');
+    if(c>15) document.body.classList.add('glitch-flash');
 
-    if (c > 12) {
-      input.classList.add('glitch');
-      input.placeholder = '■■■■■■■■';
-    }
+    if(c>12){ input.classList.add('glitch'); input.placeholder='■■■■■■■■'; }
   }
 
-  idleTimer = setTimeout(idleTalk, 5000);
+  idleTimer=setTimeout(idleTalk,5000);
 </script>
-
 </body>
 </html>
